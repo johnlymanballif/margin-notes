@@ -91,7 +91,7 @@ export function AudioBackendSelector({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-[#171717]">
           System Audio Backend
         </label>
         <div className="relative">
@@ -153,7 +153,7 @@ export function AudioBackendSelector({
               />
               <div className="ml-3 flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-[#171717]">
                     {backend.name}
                   </span>
                   {currentBackend === backend.id && (
@@ -167,14 +167,14 @@ export function AudioBackendSelector({
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-gray-600">{backend.description}</p>
+                <p className="mt-1 text-xs text-[#525252]">{backend.description}</p>
               </div>
             </label>
           );
         })}
       </div>
 
-      <div className="text-xs text-gray-500 space-y-1">
+      <div className="text-xs text-[#737373] space-y-1">
         <p>• Backend selection only affects system audio capture</p>
         <p>• Microphone always uses the default method</p>
         <p>• Changes apply to new recording sessions</p>

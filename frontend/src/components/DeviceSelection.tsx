@@ -226,7 +226,7 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-gray-900">Audio Devices</h4>
+        <h4 className="text-sm font-medium text-[#171717]">Audio Devices</h4>
         <div className="flex items-center space-x-2">
           {/* TODO: Monitoring */}
           {/* <button */}
@@ -261,8 +261,8 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
         {/* Microphone Selection */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Mic className="h-4 w-4 text-gray-600" />
-            <label className="text-sm font-medium text-gray-700">
+            <Mic className="h-4 w-4 text-[#525252]" />
+            <label className="text-sm font-medium text-[#171717]">
               Microphone
             </label>
           </div>
@@ -270,7 +270,7 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
             value={selectedDevices.micDevice || 'default'}
             onChange={(e) => handleMicDeviceChange(e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+            className="w-full px-3 py-2 text-sm text-[#171717] bg-white border border-[#e5e5e5] rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[#171717] focus:border-[#171717] disabled:bg-[#fafafa] disabled:text-[#737373]"
           >
             <option value="default">Default Microphone</option>
             {inputDevices.map((device) => (
@@ -280,7 +280,7 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
             ))}
           </select>
           {inputDevices.length === 0 && (
-            <p className="text-xs text-gray-500">No microphone devices found</p>
+            <p className="text-xs text-[#737373]">No microphone devices found</p>
           )}
 
           {/* Audio Level Meters for Input Devices */}
@@ -322,8 +322,8 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
         {/* System Audio Selection */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Speaker className="h-4 w-4 text-gray-600" />
-            <label className="text-sm font-medium text-gray-700">
+            <Speaker className="h-4 w-4 text-[#525252]" />
+            <label className="text-sm font-medium text-[#171717]">
               System Audio
             </label>
           </div>
@@ -331,7 +331,7 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
             value={selectedDevices.systemDevice || 'default'}
             onChange={(e) => handleSystemDeviceChange(e.target.value)}
             disabled={disabled}
-            className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+            className="w-full px-3 py-2 text-sm text-[#171717] bg-white border border-[#e5e5e5] rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[#171717] focus:border-[#171717] disabled:bg-[#fafafa] disabled:text-[#737373]"
           >
             <option value="default">Default System Audio</option>
             {outputDevices.map((device) => (
@@ -341,7 +341,7 @@ export function DeviceSelection({ selectedDevices, onDeviceChange, disabled = fa
             ))}
           </select>
           {outputDevices.length === 0 && (
-            <p className="text-xs text-gray-500">No system audio devices found</p>
+            <p className="text-xs text-[#737373]">No system audio devices found</p>
           )}
 
           {/* Backend Selection - only show when not recording */}

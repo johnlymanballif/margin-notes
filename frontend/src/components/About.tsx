@@ -1,17 +1,9 @@
 import React from "react";
-import { invoke } from '@tauri-apps/api/core';
 import Image from 'next/image';
 import AnalyticsConsentSwitch from "./AnalyticsConsentSwitch";
 
 
 export function About() {
-    const handleContactClick = async () => {
-        try {
-            await invoke('open_external_url', { url: 'https://marginnotes.zackriya.com/#about' });
-        } catch (error) {
-            console.error('Failed to open link:', error);
-        }
-    };
 
     return (
         <div className="p-4 space-y-4 h-[80vh] overflow-y-auto">
@@ -63,26 +55,6 @@ export function About() {
                 </p>
             </div>
 
-            {/* CTA Section - Compact */}
-            <div className="text-center space-y-2">
-                <h3 className="text-medium font-semibold text-gray-800">Ready to push your business further?</h3>
-                <p className="text-s text-gray-600">
-                    If you're planning to build privacy-first custom AI agents or a fully tailored product for your <span className="font-bold">business</span>, we can help you build it.
-                </p>
-                <button 
-                    onClick={handleContactClick}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors duration-200 shadow-sm hover:shadow-md"
-                >
-                    Chat with the Zackriya team
-                </button>
-            </div>
-
-            {/* Footer - Compact */}
-            <div className="pt-2 border-t border-gray-200 text-center">
-                <p className="text-xs text-gray-400">
-                    Built by Zackriya Solutions
-                </p>
-            </div>
             <AnalyticsConsentSwitch />
         </div>
 
