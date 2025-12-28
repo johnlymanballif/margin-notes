@@ -51,7 +51,10 @@ export function ModelManager({
   // Load persisted downloading state from localStorage
   const getPersistedDownloadingModels = (): Set<string> => {
     try {
-      const saved = localStorage.getItem('downloading-models');
+      if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
+        return new Set<string>();
+      }
+      const saved = window.localStorage.getItem('downloading-models');
       return saved ? new Set<string>(JSON.parse(saved) as string[]) : new Set<string>();
     } catch {
       return new Set<string>();
@@ -62,7 +65,9 @@ export function ModelManager({
   const updateDownloadingModels = (updater: (prev: Set<string>) => Set<string>) => {
     setDownloadingModels(prev => {
       const newSet = updater(prev);
-      localStorage.setItem('downloading-models', JSON.stringify(Array.from(newSet)));
+      if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+        window.localStorage.setItem('downloading-models', JSON.stringify(Array.from(newSet)));
+      }
       return newSet;
     });
   };

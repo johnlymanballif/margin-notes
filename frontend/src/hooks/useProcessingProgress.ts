@@ -11,6 +11,11 @@ export interface ProcessingSession {
 }
 
 export function useProcessingProgress() {
+  const getLocalStorage = () => {
+    if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') return null;
+    return window.localStorage;
+  };
+
   const [progress, setProgress] = useState<ProcessingProgress>({
     total_chunks: 0,
     completed_chunks: 0,
@@ -195,6 +200,8 @@ export function useProcessingProgress() {
   // Save/load progress state for resume functionality
   const saveProgressState = useCallback(() => {
     if (!session) return null;
+    const storage = getLocalStorage();
+    if (!storage) return null;
 
     const state = {
       session,
@@ -203,13 +210,16 @@ export function useProcessingProgress() {
       is_active: isActive
     };
 
-    localStorage.setItem('transcription_progress', JSON.stringify(state));
+    storage.setItem('transcription_progress', JSON.stringify(state));
     return state;
   }, [session, progress, isActive]);
 
   const loadProgressState = useCallback(() => {
     try {
-      const saved = localStorage.getItem('transcription_progress');
+      const storage = getLocalStorage();
+      if (!storage) return false;
+
+      const saved = storage.getItem('transcription_progress');
       if (!saved) return false;
 
       const state = JSON.parse(saved);
@@ -227,7 +237,9 @@ export function useProcessingProgress() {
   }, []);
 
   const clearSavedState = useCallback(() => {
-    localStorage.removeItem('transcription_progress');
+    const storage = getLocalStorage();
+    if (!storage) return;
+    storage.removeItem('transcription_progress');
   }, []);
 
   // Check if processing is complete

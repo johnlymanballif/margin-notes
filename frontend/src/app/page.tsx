@@ -108,8 +108,8 @@ export default function Home() {
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [showConfidenceIndicator, setShowConfidenceIndicator] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('showConfidenceIndicator');
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+      const saved = window.localStorage.getItem('showConfidenceIndicator');
       return saved !== null ? saved === 'true' : true;
     }
     return true;
@@ -1514,11 +1514,13 @@ export default function Home() {
   // Handle confidence indicator toggle
   const handleConfidenceToggle = (checked: boolean) => {
     setShowConfidenceIndicator(checked);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('showConfidenceIndicator', checked.toString());
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+      window.localStorage.setItem('showConfidenceIndicator', checked.toString());
     }
     // Trigger a custom event to notify other components
-    window.dispatchEvent(new CustomEvent('confidenceIndicatorChanged', { detail: checked }));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('confidenceIndicatorChanged', { detail: checked }));
+    }
   };
 
   // Listen for model download completion to auto-close modal

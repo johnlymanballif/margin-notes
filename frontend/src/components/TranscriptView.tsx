@@ -289,8 +289,8 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({
 
   // Load preference for showing confidence indicator
   const [showConfidence, setShowConfidence] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('showConfidenceIndicator');
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+      const saved = window.localStorage.getItem('showConfidenceIndicator');
       return saved !== null ? saved === 'true' : true; // Default to true
     }
     return true;
