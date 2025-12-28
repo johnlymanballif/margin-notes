@@ -172,3 +172,4 @@ jobs:
           echo "4. Upload the DMG file to the release" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
+

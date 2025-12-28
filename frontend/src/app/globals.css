@@ -26,6 +26,7 @@
 
 @layer base {
   :root {
+    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -84,16 +85,17 @@
 @layer base {
   * {
     @apply border-border;
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif !important;
   }
   /* html, */
   html {
-    font-family: var(--font-inter), Inter, system-ui, sans-serif;
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif !important;
   }
   body {
     @apply bg-background text-foreground;
     overflow: hidden;
     height: 100%;
-    font-family: var(--font-inter), Inter, system-ui, sans-serif;
+    font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif !important;
   }
   
   /* Typography hierarchy */
