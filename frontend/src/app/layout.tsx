@@ -17,6 +17,7 @@ import { RecordingStateProvider } from '@/contexts/RecordingStateContext'
 import { OllamaDownloadProvider } from '@/contexts/OllamaDownloadContext'
 import { SpeakerProvider } from '@/contexts/SpeakerContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -76,8 +77,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-sans antialiased">
-        <ErrorBoundary>
-          <AnalyticsProvider>
+        <ThemeProvider defaultTheme="system" storageKey="margin-notes-theme">
+          <ErrorBoundary>
+            <AnalyticsProvider>
             <RecordingStateProvider>
               <SpeakerProvider>
                 <OllamaDownloadProvider>
@@ -106,6 +108,7 @@ export default function RootLayout({
           isOpen={showImportDialog}
           onComplete={() => setShowImportDialog(false)}
         />
+        </ThemeProvider>
       </body>
     </html>
   )

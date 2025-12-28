@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, Tag as TagIcon, Folder as FolderIcon } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Tag as TagIcon, Folder as FolderIcon } from 'lucide-react';
 import { AdvancedSearch, SearchFilters } from '@/components/AdvancedSearch';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarProvider';
@@ -14,6 +14,7 @@ import Analytics from '@/lib/analytics';
 import { invoke } from '@tauri-apps/api/core';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 import {
   Dialog,
@@ -652,7 +653,7 @@ const Sidebar: React.FC = () => {
                       className="hover:text-blue-600 p-1 rounded-md hover:bg-blue-50 flex-shrink-0"
                       aria-label="Edit meeting title"
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Plus className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -831,13 +832,18 @@ const Sidebar: React.FC = () => {
                 )}
               </button>
         
-              <button
-                onClick={() => router.push('/settings')}
-                className="w-full flex items-center justify-center px-3 py-1.5 mt-1 mb-1 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors shadow-sm"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                <span>Settings</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push('/settings')}
+                  className="flex-1 flex items-center justify-center px-3 py-1.5 mt-1 mb-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg transition-colors shadow-sm"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  <span>Settings</span>
+                </button>
+                <div className="mt-1 mb-1">
+                  <ThemeToggle />
+                </div>
+              </div>
               <Info isCollapsed={isCollapsed} />
               <div className="w-full flex items-center justify-center px-3 py-1 text-xs text-gray-400">
               v0.1.1 - Pre Release

@@ -5,6 +5,8 @@ import { Switch } from "./ui/switch"
 import { Button } from "./ui/button"
 import { FolderOpen, Download, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
+import { check, install } from "@tauri-apps/plugin-updater"
+import { getVersion } from "@tauri-apps/api/app"
 import Analytics from "@/lib/analytics"
 import AnalyticsConsentSwitch from "./AnalyticsConsentSwitch"
 import { MasterPromptSettings } from "./MasterPromptSettings"
@@ -37,13 +39,6 @@ interface NotificationSettings {
   }
 }
 
-interface UpdateCheckResult {
-  available: boolean
-  current_version: string
-  version: string | null
-  body: string | null
-  error: string | null
-}
 
 export function PreferenceSettings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
@@ -52,9 +47,11 @@ export function PreferenceSettings() {
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [previousNotificationsEnabled, setPreviousNotificationsEnabled] = useState<boolean | null>(null);
-  const [updateCheckResult, setUpdateCheckResult] = useState<UpdateCheckResult | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; body: string | null } | null>(null);
+  const [currentVersion, setCurrentVersion] = useState<string>("");
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -92,6 +89,10 @@ export function PreferenceSettings() {
         await Analytics.track('preferences_viewed', {
           notifications_enabled: settings?.notification_preferences.show_recording_started ? 'true' : 'false'
         });
+
+        // Load current app version
+        const version = await getVersion();
+        setCurrentVersion(version);
       } catch (error) {
         console.error('Failed to load preferences:', error);
       } finally {
@@ -165,35 +166,44 @@ export function PreferenceSettings() {
 
   const handleCheckForUpdates = async () => {
     setIsCheckingUpdate(true);
-    setUpdateCheckResult(null);
+    setUpdateAvailable(null);
+    setUpdateError(null);
     
     try {
-      const result = await invoke<UpdateCheckResult>('check_for_updates');
-      setUpdateCheckResult(result);
+      const updater = await check();
       
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.available) {
-        toast.success(`Update available: ${result.version}`);
+      if (updater) {
+        setUpdateAvailable({
+          version: updater.version,
+          body: updater.body || null
+        });
+        toast.success(`Update available: ${updater.version}`);
+        
+        await Analytics.track('update_check_performed', {
+          update_available: 'true',
+          current_version: currentVersion,
+          new_version: updater.version
+        });
       } else {
         toast.info('You are running the latest version');
+        await Analytics.track('update_check_performed', {
+          update_available: 'false',
+          current_version: currentVersion,
+          new_version: 'none'
+        });
       }
-      
-      await Analytics.track('update_check_performed', {
-        update_available: result.available.toString(),
-        current_version: result.current_version,
-        new_version: result.version || 'none'
-      });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to check for updates';
       console.error('Failed to check for updates:', error);
-      toast.error('Failed to check for updates');
+      setUpdateError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsCheckingUpdate(false);
     }
   };
 
   const handleInstallUpdate = async () => {
-    if (!updateCheckResult?.available) {
+    if (!updateAvailable) {
       return;
     }
     
@@ -201,11 +211,21 @@ export function PreferenceSettings() {
     
     try {
       toast.info('Downloading and installing update...');
-      await invoke('install_update');
+      const updater = await check();
+      
+      if (!updater) {
+        toast.error('No update available');
+        setIsInstallingUpdate(false);
+        return;
+      }
+      
+      await install(updater);
       // Note: The app will restart automatically after installation
+      toast.success('Update installed. The app will restart shortly...');
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to install update';
       console.error('Failed to install update:', error);
-      toast.error(`Failed to install update: ${error}`);
+      toast.error(errorMessage);
       setIsInstallingUpdate(false);
     }
   };
@@ -326,46 +346,44 @@ export function PreferenceSettings() {
               )}
             </Button>
             
-            {updateCheckResult && (
+            {updateAvailable && (
               <div className="flex items-center gap-2 text-sm">
-                {updateCheckResult.available ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-gray-700">
-                      Update available: <strong>{updateCheckResult.version}</strong>
-                    </span>
-                  </>
-                ) : updateCheckResult.error ? (
-                  <>
-                    <AlertCircle className="w-4 h-4 text-red-600" />
-                    <span className="text-red-600">{updateCheckResult.error}</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="text-gray-700">
-                      You're running the latest version ({updateCheckResult.current_version})
-                    </span>
-                  </>
-                )}
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span className="text-gray-700">
+                  Update available: <strong>{updateAvailable.version}</strong>
+                </span>
+              </div>
+            )}
+            {updateError && (
+              <div className="flex items-center gap-2 text-sm">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <span className="text-red-600">{updateError}</span>
+              </div>
+            )}
+            {!updateAvailable && !updateError && currentVersion && (
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span className="text-gray-700">
+                  You're running the latest version ({currentVersion})
+                </span>
               </div>
             )}
           </div>
 
-          {updateCheckResult?.available && (
+          {updateAvailable && (
             <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <h4 className="font-medium text-blue-900 mb-1">
-                    Version {updateCheckResult.version} is available
+                    Version {updateAvailable.version} is available
                   </h4>
-                  {updateCheckResult.body && (
+                  {updateAvailable.body && (
                     <p className="text-sm text-blue-800 mb-3 whitespace-pre-wrap">
-                      {updateCheckResult.body}
+                      {updateAvailable.body}
                     </p>
                   )}
                   <p className="text-xs text-blue-700">
-                    Current version: {updateCheckResult.current_version}
+                    Current version: {currentVersion}
                   </p>
                 </div>
                 <Button
