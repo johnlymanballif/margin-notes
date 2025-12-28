@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use anyhow::Result;
 use log::{debug, error, info, warn};
-use crate::{perf_debug, batch_audio_metric};
+use crate::batch_audio_metric;
 use super::batch_processor::AudioMetricsBatcher;
 use rubato::{Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction};
 
@@ -20,6 +20,10 @@ struct AudioMixerRingBuffer {
     system_buffer: VecDeque<f32>,
     window_size_samples: usize,  // Fixed mixing window (e.g., 50ms)
     max_buffer_size: usize,  // Safety limit (e.g., 100ms)
+    mic_overflow_count: usize,
+    system_overflow_count: usize,
+    total_samples_processed: usize,
+    last_health_check: std::time::Instant,
 }
 
 impl AudioMixerRingBuffer {

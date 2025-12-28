@@ -1,8 +1,9 @@
 use log::{error, info};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 use std::fs;
 use tauri::{AppHandle, Emitter, Manager};
+use sqlx::Row;
 
 use super::manager::DatabaseManager;
 use crate::state::AppState;
@@ -235,7 +236,6 @@ pub async fn open_database_folder(app: AppHandle) -> Result<(), String> {
 
 // Speaker and Company Management Commands
 
-use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[derive(Debug, Serialize, Deserialize)]

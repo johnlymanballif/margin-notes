@@ -1,6 +1,6 @@
 use crate::database::models::Folder;
 use sqlx::{Error as SqlxError, SqlitePool};
-use tracing::{error, info};
+use tracing::info;
 use uuid::Uuid;
 
 pub struct FoldersRepository;

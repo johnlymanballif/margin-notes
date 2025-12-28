@@ -1,6 +1,6 @@
 use crate::database::models::Tag;
 use sqlx::{Error as SqlxError, SqlitePool};
-use tracing::{error, info};
+use tracing::info;
 use uuid::Uuid;
 
 pub struct TagsRepository;
