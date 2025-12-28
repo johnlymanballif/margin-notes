@@ -5,7 +5,7 @@ import { Switch } from "./ui/switch"
 import { Button } from "./ui/button"
 import { FolderOpen, Download, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
-import { check, install } from "@tauri-apps/plugin-updater"
+import { check, Update } from "@tauri-apps/plugin-updater"
 import { getVersion } from "@tauri-apps/api/app"
 import Analytics from "@/lib/analytics"
 import AnalyticsConsentSwitch from "./AnalyticsConsentSwitch"
@@ -219,7 +219,14 @@ export function PreferenceSettings() {
         return;
       }
       
-      await install(updater);
+      // Download and install the update
+      await updater.downloadAndInstall((event) => {
+        if (event.event === 'Progress' && event.data.chunkLength) {
+          // Could show progress here if needed
+          console.log('Download progress:', event.data.chunkLength);
+        }
+      });
+      
       // Note: The app will restart automatically after installation
       toast.success('Update installed. The app will restart shortly...');
     } catch (error) {

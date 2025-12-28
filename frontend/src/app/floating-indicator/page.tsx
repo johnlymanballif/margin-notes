@@ -78,9 +78,9 @@ export default function FloatingIndicatorPage() {
     <div 
       className="w-full h-full flex items-center justify-center"
       style={{ 
-        WebkitAppRegion: 'drag' as any,
+        WebkitAppRegion: 'drag',
         fontFamily: 'var(--font-inter), Inter, system-ui, sans-serif'
-      }}
+      } as React.CSSProperties & { WebkitAppRegion?: string }}
     >
       <AnimatePresence>
         <motion.div
