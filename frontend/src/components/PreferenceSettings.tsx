@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { Switch } from "./ui/switch"
-import { FolderOpen } from "lucide-react"
+import { Button } from "./ui/button"
+import { FolderOpen, Download, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import Analytics from "@/lib/analytics"
 import AnalyticsConsentSwitch from "./AnalyticsConsentSwitch"
 import { MasterPromptSettings } from "./MasterPromptSettings"
+import { toast } from "sonner"
 
 interface StorageLocations {
   database: string
@@ -35,6 +37,14 @@ interface NotificationSettings {
   }
 }
 
+interface UpdateCheckResult {
+  available: boolean
+  current_version: string
+  version: string | null
+  body: string | null
+  error: string | null
+}
+
 export function PreferenceSettings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
@@ -42,6 +52,9 @@ export function PreferenceSettings() {
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [previousNotificationsEnabled, setPreviousNotificationsEnabled] = useState<boolean | null>(null);
+  const [updateCheckResult, setUpdateCheckResult] = useState<UpdateCheckResult | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [isInstallingUpdate, setIsInstallingUpdate] = useState(false);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -150,6 +163,53 @@ export function PreferenceSettings() {
     }
   };
 
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateCheckResult(null);
+    
+    try {
+      const result = await invoke<UpdateCheckResult>('check_for_updates');
+      setUpdateCheckResult(result);
+      
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.available) {
+        toast.success(`Update available: ${result.version}`);
+      } else {
+        toast.info('You are running the latest version');
+      }
+      
+      await Analytics.track('update_check_performed', {
+        update_available: result.available.toString(),
+        current_version: result.current_version,
+        new_version: result.version || 'none'
+      });
+    } catch (error) {
+      console.error('Failed to check for updates:', error);
+      toast.error('Failed to check for updates');
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    if (!updateCheckResult?.available) {
+      return;
+    }
+    
+    setIsInstallingUpdate(true);
+    
+    try {
+      toast.info('Downloading and installing update...');
+      await invoke('install_update');
+      // Note: The app will restart automatically after installation
+    } catch (error) {
+      console.error('Failed to install update:', error);
+      toast.error(`Failed to install update: ${error}`);
+      setIsInstallingUpdate(false);
+    }
+  };
+
   if (loading || notificationsEnabled === null) {
     return <div className="max-w-2xl mx-auto p-6">Loading Preferences...</div>
   }
@@ -236,6 +296,100 @@ export function PreferenceSettings() {
       {/* Analytics Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
         <AnalyticsConsentSwitch />
+      </div>
+
+      {/* Updates Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Application Updates</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Check for and install the latest version of Margin Notes. Your preferences and data will be preserved.
+        </p>
+        
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleCheckForUpdates}
+              disabled={isCheckingUpdate || isInstallingUpdate}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {isCheckingUpdate ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Check for Updates
+                </>
+              )}
+            </Button>
+            
+            {updateCheckResult && (
+              <div className="flex items-center gap-2 text-sm">
+                {updateCheckResult.available ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span className="text-gray-700">
+                      Update available: <strong>{updateCheckResult.version}</strong>
+                    </span>
+                  </>
+                ) : updateCheckResult.error ? (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <span className="text-red-600">{updateCheckResult.error}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span className="text-gray-700">
+                      You're running the latest version ({updateCheckResult.current_version})
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {updateCheckResult?.available && (
+            <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="font-medium text-blue-900 mb-1">
+                    Version {updateCheckResult.version} is available
+                  </h4>
+                  {updateCheckResult.body && (
+                    <p className="text-sm text-blue-800 mb-3 whitespace-pre-wrap">
+                      {updateCheckResult.body}
+                    </p>
+                  )}
+                  <p className="text-xs text-blue-700">
+                    Current version: {updateCheckResult.current_version}
+                  </p>
+                </div>
+                <Button
+                  onClick={handleInstallUpdate}
+                  disabled={isInstallingUpdate}
+                  variant="default"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                >
+                  {isInstallingUpdate ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Installing...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Install Update
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

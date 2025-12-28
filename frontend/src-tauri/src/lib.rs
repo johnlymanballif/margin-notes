@@ -40,6 +40,7 @@ pub mod api;
 pub mod audio;
 pub mod console_utils;
 pub mod database;
+pub mod floating_indicator;
 pub mod notifications;
 pub mod ollama;
 pub mod openrouter;
@@ -47,6 +48,7 @@ pub mod parakeet_engine;
 pub mod state;
 pub mod summary;
 pub mod tray;
+pub mod updater;
 pub mod utils;
 pub mod whisper_engine;
 
@@ -393,6 +395,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(whisper_engine::parallel_commands::ParallelProcessorState::new())
         .manage(Arc::new(RwLock::new(
             None::<notifications::manager::NotificationManager<tauri::Wry>>,
@@ -688,9 +691,17 @@ pub fn run() {
             database::commands::get_meeting_transcripts_paginated,
             database::commands::get_meeting_transcript_count,
             whisper_engine::commands::open_models_folder,
+            // Floating indicator commands
+            floating_indicator::show_floating_indicator,
+            floating_indicator::hide_floating_indicator,
+            floating_indicator::update_audio_level,
+            floating_indicator::position_floating_indicator,
             // System settings commands
             #[cfg(target_os = "macos")]
             utils::open_system_settings,
+            // Updater commands
+            updater::commands::check_for_updates,
+            updater::commands::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

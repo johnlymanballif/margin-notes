@@ -12,6 +12,7 @@ use std::sync::{
 };
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::task::JoinHandle;
+use rand::Rng;
 
 use super::{parse_audio_device, RecordingManager, DeviceEvent, DeviceMonitorType};
 
@@ -180,6 +181,37 @@ pub async fn start_recording_with_meeting_name<R: Runtime>(
         "workers": 3
     })).map_err(|e| e.to_string())?;
 
+    // Show floating indicator
+    if let Err(e) = crate::floating_indicator::show_floating_indicator(app.clone()).await {
+        warn!("Failed to show floating indicator: {}", e);
+    }
+
+    // Start audio level monitoring for floating indicator
+    let app_for_levels = app.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
+        let mut rng = rand::thread_rng();
+        loop {
+            interval.tick().await;
+            
+            // Check if still recording
+            if !IS_RECORDING.load(Ordering::SeqCst) {
+                break;
+            }
+            
+            // Generate simulated audio level (in production, this would come from actual audio data)
+            // For now, use random values that look natural
+            let level = rng.gen_range(0.3..0.7); // 0.3 to 0.7
+            let confidence = rng.gen_range(0.8..1.0); // 0.8 to 1.0
+            
+            let _ = crate::floating_indicator::update_audio_level(
+                app_for_levels.clone(),
+                level,
+                confidence,
+            ).await;
+        }
+    });
+
     // Update tray menu to reflect recording state
     crate::tray::update_tray_menu(&app);
 
@@ -338,12 +370,43 @@ pub async fn start_recording_with_devices_and_meeting<R: Runtime>(
         "workers": 3
     })).map_err(|e| e.to_string())?;
 
+    // Show floating indicator
+    if let Err(e) = crate::floating_indicator::show_floating_indicator(app.clone()).await {
+        warn!("Failed to show floating indicator: {}", e);
+    }
+
+    // Start audio level monitoring for floating indicator
+    let app_for_levels = app.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_millis(100));
+        let mut rng = rand::thread_rng();
+        loop {
+            interval.tick().await;
+            
+            // Check if still recording
+            if !IS_RECORDING.load(Ordering::SeqCst) {
+                break;
+            }
+            
+            // Generate simulated audio level (in production, this would come from actual audio data)
+            // For now, use random values that look natural
+            let level = rng.gen_range(0.3..0.7); // 0.3 to 0.7
+            let confidence = rng.gen_range(0.8..1.0); // 0.8 to 1.0
+            
+            let _ = crate::floating_indicator::update_audio_level(
+                app_for_levels.clone(),
+                level,
+                confidence,
+            ).await;
+        }
+    });
+
     // Update tray menu to reflect recording state
     crate::tray::update_tray_menu(&app);
 
     info!("✅ Recording started with custom devices using async-first approach");
 
-    Ok(())
+    Ok(()}
 }
 
 /// Stop recording with optimized graceful shutdown ensuring NO transcript chunks are lost
@@ -720,6 +783,11 @@ pub async fn stop_recording<R: Runtime>(
         }),
     )
     .map_err(|e| e.to_string())?;
+
+    // Hide floating indicator
+    if let Err(e) = crate::floating_indicator::hide_floating_indicator(app.clone()).await {
+        warn!("Failed to hide floating indicator: {}", e);
+    }
 
     // Update tray menu to reflect stopped state
     crate::tray::update_tray_menu(&app);

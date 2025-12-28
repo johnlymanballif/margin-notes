@@ -13,9 +13,8 @@ import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { LegacyDatabaseImport } from '@/components/DatabaseImport/LegacyDatabaseImport'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { RecordingStateProvider, useRecordingState } from '@/contexts/RecordingStateContext'
+import { RecordingStateProvider } from '@/contexts/RecordingStateContext'
 import { OllamaDownloadProvider } from '@/contexts/OllamaDownloadContext'
-import { FloatingRecordingIndicator } from '@/components/FloatingRecordingIndicator'
 import { SpeakerProvider } from '@/contexts/SpeakerContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -26,16 +25,7 @@ const inter = Inter({
   display: 'swap',
 })
 
-// Wrapper component to access recording state
-function FloatingIndicatorWrapper() {
-  const recordingState = useRecordingState();
-  return (
-    <FloatingRecordingIndicator
-      isRecording={recordingState.isRecording}
-      isPaused={recordingState.isPaused}
-    />
-  );
-}
+// Floating indicator is now a separate Tauri window
 
 // export { metadata } from './metadata'
 
@@ -103,7 +93,6 @@ export default function RootLayout({
                             <MainContent>{children}</MainContent>
                           </ErrorBoundary>
                         </div>
-                        <FloatingIndicatorWrapper />
                       </TooltipProvider>
                     </SidebarProvider>
                   </ErrorBoundary>

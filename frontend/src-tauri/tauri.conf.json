@@ -11,15 +11,34 @@
     },
 
     "app": {
-        "windows": [{
-            "title": "Margin Notes",
-            "width": 1100,
-            "height": 700,
-            "resizable": true,
-            "fullscreen": false,
-            "theme": "Light",
-            "decorations": true
-        }],
+        "windows": [
+            {
+                "label": "main",
+                "title": "Margin Notes",
+                "width": 1100,
+                "height": 700,
+                "resizable": true,
+                "fullscreen": false,
+                "theme": "Light",
+                "decorations": true
+            },
+            {
+                "label": "floating-indicator",
+                "title": "Recording Indicator",
+                "url": "/floating-indicator",
+                "width": 200,
+                "height": 80,
+                "resizable": false,
+                "fullscreen": false,
+                "decorations": false,
+                "transparent": true,
+                "alwaysOnTop": true,
+                "skipTaskbar": true,
+                "visible": false,
+                "focus": false,
+                "acceptFirstMouse": false
+            }
+        ],
         "macOSPrivateApi": true,
         "security": {
             "csp": {
@@ -34,37 +53,54 @@
                     "$APPDATA/**"
                 ]
             },
-            "capabilities": [{
-                "identifier": "main",
-                "description": "Main window capability with file system and media access",
-                "windows": ["main"],
-                "permissions": [
-                    "fs:default",
-                    "fs:allow-read-file",
-                    "fs:read-all",
-                    "fs:write-all",
-                    "fs:allow-app-read",
-                    "fs:allow-app-write",
-                    "fs:allow-download-write",
-                    "fs:allow-download-read",
-                    "fs:scope-download",
-                    "core:path:default",
-                    "core:event:default",
-                    "core:window:default",
-                    "core:app:default",
-                    "core:resources:default",
-                    "core:menu:default",
-                    "core:tray:default",
-                    "core:window:allow-set-title",
-                    "store:default",
-                    "notification:default",
-                    "notification:allow-is-permission-granted",
-                    {
-                        "identifier": "fs:scope",
-                        "allow": [{ "path": "$APPDATA/*" }]
-                    }
-                ]
-            }]
+            "capabilities": [
+                {
+                    "identifier": "main",
+                    "description": "Main window capability with file system and media access",
+                    "windows": ["main"],
+                    "permissions": [
+                        "fs:default",
+                        "fs:allow-read-file",
+                        "fs:read-all",
+                        "fs:write-all",
+                        "fs:allow-app-read",
+                        "fs:allow-app-write",
+                        "fs:allow-download-write",
+                        "fs:allow-download-read",
+                        "fs:scope-download",
+                        "core:path:default",
+                        "core:event:default",
+                        "core:window:default",
+                        "core:app:default",
+                        "core:resources:default",
+                        "core:menu:default",
+                        "core:tray:default",
+                        "core:window:allow-set-title",
+                        "store:default",
+                        "notification:default",
+                        "notification:allow-is-permission-granted",
+                        "updater:default",
+                        {
+                            "identifier": "fs:scope",
+                            "allow": [{ "path": "$APPDATA/*" }]
+                        }
+                    ]
+                },
+                {
+                    "identifier": "floating-indicator",
+                    "description": "Floating indicator window capability",
+                    "windows": ["floating-indicator"],
+                    "permissions": [
+                        "core:event:default",
+                        "core:window:default",
+                        "core:window:allow-show",
+                        "core:window:allow-hide",
+                        "core:window:allow-set-always-on-top",
+                        "core:window:allow-set-position",
+                        "core:window:allow-set-size"
+                    ]
+                }
+            ]
         }
     },
     "bundle": {
