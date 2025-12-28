@@ -1,0 +1,174 @@
+name: "Build macOS (Simple)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      build-type:
+        description: 'Build type'
+        required: true
+        type: choice
+        options:
+          - debug
+          - release
+        default: release
+
+# Cancel duplicate workflow runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  COPYFILE_DISABLE: 1
+  COPY_EXTENDED_ATTRIBUTES_DISABLE: 1
+
+jobs:
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tauri.conf.json
+        id: get-version
+        shell: bash
+        run: |
+          VERSION=$(grep -o '"version": "[^"]*"' frontend/src-tauri/tauri.conf.json | cut -d'"' -f4)
+          echo "Application version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Determine build profile
+        id: build-profile
+        shell: bash
+        run: |
+          if [[ "${{ github.event.inputs.build-type }}" == "debug" ]]; then
+            echo "profile=debug" >> "$GITHUB_OUTPUT"
+            echo "args=--debug" >> "$GITHUB_OUTPUT"
+            echo "Build profile: debug"
+          else
+            echo "profile=release" >> "$GITHUB_OUTPUT"
+            echo "args=" >> "$GITHUB_OUTPUT"
+            echo "Build profile: release"
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "frontend/src-tauri -> target"
+          key: macos-latest-aarch64-apple-darwin
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install
+
+      - name: Clean up macOS resource fork files
+        run: |
+          find . -type f -name '._*' -delete || true
+          echo "Cleaned resource fork files"
+
+      - name: Build Tauri app
+        run: |
+          cd frontend
+          pnpm tauri build --target aarch64-apple-darwin ${{ steps.build-profile.outputs.args }}
+        env:
+          COPYFILE_DISABLE: 1
+          COPY_EXTENDED_ATTRIBUTES_DISABLE: 1
+
+      - name: Verify build artifacts
+        run: |
+          echo "Build artifacts:"
+          find frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle -type f
+
+      - name: Package artifacts
+        run: |
+          mkdir -p artifacts
+          
+          # Copy DMG if exists
+          if [ -d "frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle/dmg" ]; then
+            cp frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle/dmg/*.dmg artifacts/ || true
+          fi
+          
+          # Copy app bundle and create tar.gz if exists
+          if [ -d "frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle/macos" ]; then
+            cd frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle/macos
+            for app in *.app; do
+              if [ -d "$app" ]; then
+                tar -czf "$app.tar.gz" "$app"
+              fi
+            done
+            cd -
+            cp frontend/src-tauri/target/aarch64-apple-darwin/${{ steps.build-profile.outputs.profile }}/bundle/macos/*.tar.gz artifacts/ || true
+          fi
+          
+          echo "Artifacts created:"
+          ls -lh artifacts/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: margin-notes-macos-${{ steps.get-version.outputs.version }}-${{ steps.build-profile.outputs.profile }}
+          path: artifacts/*
+          retention-days: 30
+
+      - name: Generate build summary
+        run: |
+          echo "## 🍎 macOS Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | ${{ steps.get-version.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Profile** | ${{ steps.build-profile.outputs.profile }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target** | aarch64-apple-darwin (Apple Silicon) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Signed** | ❌ No |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Build Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Downloaded artifacts will contain:" >> $GITHUB_STEP_SUMMARY
+          echo "- DMG installer (for distribution)" >> $GITHUB_STEP_SUMMARY
+          echo "- App bundle archive (.tar.gz)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Download the artifacts from this workflow run" >> $GITHUB_STEP_SUMMARY
+          echo "2. Extract the zip file" >> $GITHUB_STEP_SUMMARY
+          echo "3. Create a GitHub Release at: https://github.com/${{ github.repository }}/releases/new" >> $GITHUB_STEP_SUMMARY
+          echo "4. Upload the DMG file to the release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
